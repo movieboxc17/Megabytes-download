@@ -43,11 +43,15 @@
         let intervalId;
 
         function downloadLargeFile() {
-            // URL of a large file (or you can use a specific test file on your own server)
             let url = 'https://speed.hetzner.de/100MB.bin'; // 100 MB file example
-            
+
             fetch(url)
-                .then(response => response.blob())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob();
+                })
                 .then(blob => {
                     filesDownloaded += 1;
                     dataDownloaded += blob.size / (1024 * 1024); // Convert bytes to megabytes
@@ -55,7 +59,7 @@
                     document.getElementById('dataDownloaded').innerText = dataDownloaded.toFixed(2);
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    console.error('Download error:', error);
                 });
         }
 
@@ -70,9 +74,7 @@
             document.getElementById('startButton').disabled = true;
             document.getElementById('stopButton').disabled = false;
 
-            intervalId = setInterval(() => {
-                downloadLargeFile();
-            }, 1000); // Download every second
+            intervalId = setInterval(downloadLargeFile, 1000); // Download every second
         };
 
         document.getElementById('stopButton').onclick = function() {
