@@ -32,12 +32,14 @@
     
     <div id="status">
         <p>Status: <span id="statusText">Idle</span></p>
-        <p>Data Downloaded: <span id="dataDownloaded">0</span> MB</p>
+        <p>Files Downloaded: <span id="filesDownloaded">0</span></p>
+        <p>Total Data Downloaded: <span id="dataDownloaded">0</span> MB</p>
     </div>
 
     <script>
         let running = false;
         let dataDownloaded = 0;
+        let filesDownloaded = 0;
         let intervalId;
 
         function downloadLargeFile() {
@@ -47,8 +49,10 @@
             fetch(url)
                 .then(response => response.blob())
                 .then(blob => {
-                    dataDownloaded += 100; // Adding 100 MB as this is the size of the file
-                    document.getElementById('dataDownloaded').innerText = dataDownloaded;
+                    filesDownloaded += 1;
+                    dataDownloaded += blob.size / (1024 * 1024); // Convert bytes to megabytes
+                    document.getElementById('filesDownloaded').innerText = filesDownloaded;
+                    document.getElementById('dataDownloaded').innerText = dataDownloaded.toFixed(2);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -59,14 +63,16 @@
             if (running) return;
             running = true;
             dataDownloaded = 0;
-            document.getElementById('dataDownloaded').innerText = dataDownloaded;
+            filesDownloaded = 0;
+            document.getElementById('filesDownloaded').innerText = filesDownloaded;
+            document.getElementById('dataDownloaded').innerText = dataDownloaded.toFixed(2);
             document.getElementById('statusText').innerText = 'Running';
             document.getElementById('startButton').disabled = true;
             document.getElementById('stopButton').disabled = false;
 
             intervalId = setInterval(() => {
                 downloadLargeFile();
-            }, 1000); // Download every second, adjust for higher/lower load
+            }, 1000); // Download every second
         };
 
         document.getElementById('stopButton').onclick = function() {
