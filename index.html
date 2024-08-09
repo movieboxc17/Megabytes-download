@@ -14,7 +14,7 @@
     <script>
         let isDownloading = false;
         let downloadInterval;
-        const url = 'https://ipv4.download.thinkbroadband.com/100MB.zip'; // Ensure this URL is valid
+        const url = 'https://ipv4.download.thinkbroadband.com/100MB.zip'; // Ensure this URL is correct
 
         document.getElementById("startButton").addEventListener("click", function() {
             isDownloading = true;
@@ -36,16 +36,17 @@
             if (!isDownloading) return;
 
             try {
-                const response = await fetch(url, { cache: "no-cache" });
+                const response = await fetch(url, { method: 'GET', cache: 'no-cache' });
 
                 if (!response.ok) {
-                    console.error('Network response was not ok:', response.statusText);
-                    return;
+                    throw new Error(`Network response was not ok: ${response.statusText}`);
                 }
 
-                // Just to demonstrate that data is being fetched
+                // Create a blob from the response
                 const blob = await response.blob();
                 console.log('Downloaded a chunk of data.');
+
+                // Optional: You can use the blob object as needed
 
             } catch (error) {
                 console.error('Failed to download data:', error);
