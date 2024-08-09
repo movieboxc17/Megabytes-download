@@ -41,20 +41,21 @@
         async function downloadData() {
             while (downloading) {
                 try {
-                    // Fetch from a known URL that supports cross-origin requests
                     const response = await fetch('https://speed.hetzner.de/100MB.bin', { cache: 'no-store' });
 
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        throw new Error(`HTTP error! Status: ${response.status}`);
                     }
 
                     const reader = response.body.getReader();
-                    let result;
 
                     // Read the data in chunks
-                    while (!result?.done && downloading) {
-                        result = await reader.read();
-                        totalBytes += result.value?.byteLength || 0;
+                    while (downloading) {
+                        const { done, value } = await reader.read();
+
+                        if (done) break;
+
+                        totalBytes += value.byteLength;
 
                         // Update the download info on the page
                         document.getElementById('downloadInfo').textContent = `Downloaded: ${(totalBytes / (1024 * 1024)).toFixed(2)} MB`;
@@ -62,8 +63,7 @@
                 } catch (error) {
                     document.getElementById('errorInfo').textContent = `An error occurred: ${error.message}`;
                     console.error("An error occurred:", error);
-                    // Retry after a short delay
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    downloading = false;  // Stop on error
                 }
             }
         }
@@ -74,6 +74,7 @@
         // Stop downloading when the button is clicked
         document.getElementById('stopButton').addEventListener('click', () => {
             downloading = false;
+            document.getElementById('errorInfo').textContent = 'Download stopped by user.';
             console.log('Download stopped.');
         });
     </script>
