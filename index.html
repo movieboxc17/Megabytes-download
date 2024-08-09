@@ -14,15 +14,22 @@
             border: none;
             cursor: pointer;
         }
+
+        #downloadInfo {
+            margin-top: 20px;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
     <h1>Continuous Data Download</h1>
     <p>Click the button below to stop the download.</p>
     <button id="stopButton">Stop Download</button>
+    <div id="downloadInfo">Downloaded: 0 MB</div>
 
     <script>
         let downloading = true;
+        let totalBytes = 0;
 
         async function downloadData() {
             while (downloading) {
@@ -34,8 +41,10 @@
                 while (downloading) {
                     const { done, value } = await reader.read();
                     if (done) break;
-                    // Process data here, or just keep downloading
-                    console.log('Downloading chunk of data...');
+                    totalBytes += value.byteLength;
+
+                    // Update the download info
+                    document.getElementById('downloadInfo').textContent = `Downloaded: ${(totalBytes / (1024 * 1024)).toFixed(2)} MB`;
                 }
             }
         }
