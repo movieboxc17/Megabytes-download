@@ -3,59 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bandwidth Maximizer</title>
+    <title>Network Bandwidth Stress Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #status {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>Bandwidth Maximizer</h1>
-    <p>Click "Start" to begin downloading data. Click "Stop" to halt the download.</p>
-    <button id="startButton">Start</button>
-    <button id="stopButton" disabled>Stop</button>
+
+    <h1>Network Bandwidth Stress Test</h1>
+    <button id="startButton">Start Test</button>
+    <button id="stopButton" disabled>Stop Test</button>
+    
+    <div id="status">
+        <p>Status: <span id="statusText">Idle</span></p>
+        <p>Data Downloaded: <span id="dataDownloaded">0</span> MB</p>
+    </div>
 
     <script>
-        let isDownloading = false;
-        let downloadInterval;
-        const url = 'https://ipv4.download.thinkbroadband.com/100MB.zip'; // Ensure this URL is correct
+        let running = false;
+        let dataDownloaded = 0;
+        let intervalId;
 
-        document.getElementById("startButton").addEventListener("click", function() {
-            isDownloading = true;
-            this.disabled = true;
-            document.getElementById("stopButton").disabled = false;
-
-            downloadInterval = setInterval(downloadData, 100); // Adjust interval as needed
-        });
-
-        document.getElementById("stopButton").addEventListener("click", function() {
-            isDownloading = false;
-            this.disabled = true;
-            document.getElementById("startButton").disabled = false;
-
-            clearInterval(downloadInterval);
-        });
-
-        async function downloadData() {
-            if (!isDownloading) return;
-
-            try {
-                const response = await fetch(url, { method: 'GET', cache: 'no-cache' });
-
-                if (!response.ok) {
-                    throw new Error(`Network response was not ok: ${response.statusText}`);
-                }
-
-                // Create a blob from the response
-                const blob = await response.blob();
-                console.log('Downloaded a chunk of data.');
-
-                // Optional: You can use the blob object as needed
-
-            } catch (error) {
-                console.error('Failed to download data:', error);
-                clearInterval(downloadInterval);
-                isDownloading = false;
-                document.getElementById("startButton").disabled = false;
-                document.getElementById("stopButton").disabled = true;
-            }
+        function downloadLargeFile() {
+            // URL of a large file (or you can use a specific test file on your own server)
+            let url = 'https://speed.hetzner.de/100MB.bin'; // 100 MB file example
+            
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    dataDownloaded += 100; // Adding 100 MB as this is the size of the file
+                    document.getElementById('dataDownloaded').innerText = dataDownloaded;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         }
+
+        document.getElementById('startButton').onclick = function() {
+            if (running) return;
+            running = true;
+            dataDownloaded = 0;
+            document.getElementById('dataDownloaded').innerText = dataDownloaded;
+            document.getElementById('statusText').innerText = 'Running';
+            document.getElementById('startButton').disabled = true;
+            document.getElementById('stopButton').disabled = false;
+
+            intervalId = setInterval(() => {
+                downloadLargeFile();
+            }, 1000); // Download every second, adjust for higher/lower load
+        };
+
+        document.getElementById('stopButton').onclick = function() {
+            if (!running) return;
+            running = false;
+            clearInterval(intervalId);
+            document.getElementById('statusText').innerText = 'Stopped';
+            document.getElementById('startButton').disabled = false;
+            document.getElementById('stopButton').disabled = true;
+        };
     </script>
+
 </body>
 </html>
