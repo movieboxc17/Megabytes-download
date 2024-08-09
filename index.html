@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Continuous Download</title>
+    <title>Maximize Network Usage</title>
     <style>
         #stopButton {
             margin-top: 20px;
@@ -22,7 +22,7 @@
     </style>
 </head>
 <body>
-    <h1>Continuous Data Download</h1>
+    <h1>Maximizing Network Download</h1>
     <p>Click the button below to stop the download.</p>
     <button id="stopButton">Stop Download</button>
     <div id="downloadInfo">Downloaded: 0 MB</div>
@@ -33,11 +33,12 @@
 
         async function downloadData() {
             while (downloading) {
-                // Replace 'largefile.dat' with an actual large file URL for real use.
-                const response = await fetch('https://www.example.com/largefile.dat', { cache: 'no-store' });
+                // Use a URL that serves large or infinite amounts of data
+                // For testing purposes, you could use any large file or a server that returns an endless stream
+                const response = await fetch('https://speed.hetzner.de/100MB.bin', { cache: 'no-store' });
                 const reader = response.body.getReader();
 
-                // The download will simulate continuous data reading
+                // Read the data in chunks and count the bytes
                 while (downloading) {
                     const { done, value } = await reader.read();
                     if (done) break;
