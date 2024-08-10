@@ -3,89 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Bandwidth Stress Test</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-        }
-        #status {
-            margin-top: 20px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
+    <title>File Downloader</title>
 </head>
 <body>
-
-    <h1>Network Bandwidth Stress Test</h1>
-    <button id="startButton">Start Test</button>
-    <button id="stopButton" disabled>Stop Test</button>
-    
-    <div id="status">
-        <p>Status: <span id="statusText">Idle</span></p>
-        <p>Files Downloaded: <span id="filesDownloaded">0</span></p>
-        <p>Total Data Downloaded: <span id="dataDownloaded">0</span> MB</p>
-    </div>
+    <h1>File Downloader</h1>
+    <p id="status">Status: Checking network...</p>
+    <p id="downloaded">Total Downloaded: 0 KB</p>
+    <button id="downloadButton" disabled>Start Download</button>
 
     <script>
-        let running = false;
-        let dataDownloaded = 0;
-        let filesDownloaded = 0;
-        let intervalId;
+        let totalDownloaded = 0;
+        let isConnected = navigator.onLine;
 
-        function downloadLargeFile() {
-            let url = 'https://speed.hetzner.de/100MB.bin'; // 100 MB file example
+        const statusElement = document.getElementById('status');
+        const downloadedElement = document.getElementById('downloaded');
+        const downloadButton = document.getElementById('downloadButton');
 
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.blob();
-                })
-                .then(blob => {
-                    filesDownloaded += 1;
-                    dataDownloaded += blob.size / (1024 * 1024); // Convert bytes to megabytes
-                    document.getElementById('filesDownloaded').innerText = filesDownloaded;
-                    document.getElementById('dataDownloaded').innerText = dataDownloaded.toFixed(2);
-                })
-                .catch(error => {
-                    console.error('Download error:', error);
-                });
-        }
-
-        document.getElementById('startButton').onclick = function() {
-            if (running) return;
-            running = true;
-            dataDownloaded = 0;
-            filesDownloaded = 0;
-            document.getElementById('filesDownloaded').innerText = filesDownloaded;
-            document.getElementById('dataDownloaded').innerText = dataDownloaded.toFixed(2);
-            document.getElementById('statusText').innerText = 'Running';
-            document.getElementById('startButton').disabled = true;
-            document.getElementById('stopButton').disabled = false;
-
-            intervalId = setInterval(downloadLargeFile, 1000); // Download every second
+        const checkConnection = () => {
+            if (isConnected) {
+                statusElement.textContent = 'Status: Connected to network';
+                downloadButton.disabled = false;
+            } else {
+                statusElement.textContent = 'Status: Not connected to network';
+                downloadButton.disabled = true;
+            }
         };
 
-        document.getElementById('stopButton').onclick = function() {
-            if (!running) return;
-            running = false;
-            clearInterval(intervalId);
-            document.getElementById('statusText').innerText = 'Stopped';
-            document.getElementById('startButton').disabled = false;
-            document.getElementById('stopButton').disabled = true;
+        const updateDownloadProgress = (bytes) => {
+            totalDownloaded += bytes / 1024; // Convert bytes to KB
+            downloadedElement.textContent = `Total Downloaded: ${totalDownloaded.toFixed(2)} KB`;
         };
+
+        const downloadFile = async () => {
+            const response = await fetch('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf');
+            const reader = response.body.getReader();
+            let done = false;
+
+            while (!done) {
+                const { value, done: readerDone } = await reader.read();
+                if (value) {
+                    updateDownloadProgress(value.length);
+                }
+                done = readerDone;
+            }
+
+            // Start downloading the file again once done
+            downloadFile();
+        };
+
+        // Check connection when the page loads
+        checkConnection();
+
+        // Listen for network changes
+        window.addEventListener('online', () => {
+            isConnected = true;
+            checkConnection();
+        });
+
+        window.addEventListener('offline', () => {
+            isConnected = false;
+            checkConnection();
+        });
+
+        // Start downloading the file when the button is clicked
+        downloadButton.addEventListener('click', () => {
+            if (isConnected) {
+                downloadFile();
+            }
+        });
     </script>
-
 </body>
 </html>
