@@ -10,14 +10,17 @@
     <p id="status">Status: Checking network...</p>
     <p id="downloaded">Total Downloaded: 0 KB</p>
     <button id="downloadButton" disabled>Start Download</button>
+    <button id="saveButton" disabled>Save Data</button>
 
     <script>
         let totalDownloaded = 0;
+        let totalData = new Uint8Array(); // Store data temporarily
         let isConnected = navigator.onLine;
 
         const statusElement = document.getElementById('status');
         const downloadedElement = document.getElementById('downloaded');
         const downloadButton = document.getElementById('downloadButton');
+        const saveButton = document.getElementById('saveButton');
 
         const checkConnection = () => {
             if (isConnected) {
@@ -26,29 +29,61 @@
             } else {
                 statusElement.textContent = 'Status: Not connected to network';
                 downloadButton.disabled = true;
+                saveButton.disabled = true;
             }
         };
 
-        const updateDownloadProgress = (bytes) => {
+        const updateDownloadProgress = (bytes, chunk) => {
             totalDownloaded += bytes / 1024; // Convert bytes to KB
             downloadedElement.textContent = `Total Downloaded: ${totalDownloaded.toFixed(2)} KB`;
+
+            // Concatenate new chunk of data to totalData
+            let newData = new Uint8Array(totalData.length + chunk.length);
+            newData.set(totalData);
+            newData.set(chunk, totalData.length);
+            totalData = newData;
         };
 
         const downloadFile = async () => {
-            const response = await fetch('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf');
-            const reader = response.body.getReader();
-            let done = false;
-
-            while (!done) {
-                const { value, done: readerDone } = await reader.read();
-                if (value) {
-                    updateDownloadProgress(value.length);
+            try {
+                const response = await fetch('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-                done = readerDone;
-            }
+                const reader = response.body.getReader();
+                let done = false;
 
-            // Start downloading the file again once done
-            downloadFile();
+                while (!done) {
+                    const { value, done: readerDone } = await reader.read();
+                    if (value) {
+                        updateDownloadProgress(value.length, value);
+                    }
+                    done = readerDone;
+                }
+
+                // Allow user to save data after downloading
+                saveButton.disabled = false;
+
+                // Optionally start downloading the file again after a delay
+                setTimeout(downloadFile, 1000);
+            } catch (error) {
+                statusElement.textContent = `Error: ${error.message}`;
+                downloadButton.disabled = false;
+                saveButton.disabled = true;
+            }
+        };
+
+        const saveData = () => {
+            const blob = new Blob([totalData], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'downloaded_data.pdf';
+            link.click();
+
+            // Revoke the URL after download
+            URL.revokeObjectURL(url);
         };
 
         // Check connection when the page loads
@@ -68,9 +103,13 @@
         // Start downloading the file when the button is clicked
         downloadButton.addEventListener('click', () => {
             if (isConnected) {
+                downloadButton.disabled = true;
                 downloadFile();
             }
         });
+
+        // Save data when the save button is clicked
+        saveButton.addEventListener('click', saveData);
     </script>
 </body>
 </html>
